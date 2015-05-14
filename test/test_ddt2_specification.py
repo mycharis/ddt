@@ -512,3 +512,37 @@ class TestDecorators(TestCase):
 
         method_name = 'test__0_u0158' if six.PY2 else 'test__0_\u0158'
         self.assertTrue(hasattr(tc, method_name))
+
+    def test__multi_level_unpack_by_decorator_argument(self):
+
+        @ddt.ddt
+        class SampleTestCase(object):
+            @ddt.data(A=['a', 'b'])
+            @ddt.unpack(2)
+            @ddt.data(B=[('c', 'd')])
+            @ddt.data(C=dict(x='e', y='f'))
+            def test(self, *args, **kwargs):
+                return args, kwargs
+
+        tc = SampleTestCase()
+
+        args, kwargs = tc.test__0_A__0_B__0_C()
+        self.assertEqual(args, (['a', 'b'], 'c', 'd', dict(x='e', y='f')))
+        self.assertEqual(kwargs, {})
+
+    def test__multi_level_unpackall_by_decorator_argument(self):
+
+        @ddt.ddt
+        class SampleTestCase(object):
+            @ddt.unpackall(2)
+            @ddt.data(A=['a', 'b'])
+            @ddt.data(B=[('c', 'd')])
+            @ddt.data(C=dict(x='e', y='f'))
+            def test(self, *args, **kwargs):
+                return args, kwargs
+
+        tc = SampleTestCase()
+
+        args, kwargs = tc.test__0_A__0_B__0_C()
+        self.assertEqual(args, ('a', 'b', 'c', 'd'))
+        self.assertEqual(kwargs, dict(x='e', y='f'))

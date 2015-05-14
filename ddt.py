@@ -37,7 +37,7 @@ except NameError:
 # Public interface - Decorators
 
 
-def unpack(func):
+def unpack(arg):
     """
     Method decorator to unpack parameters from the next (syntactically)
     parameters set (``@data`` or ``@file_data`` decorator) by one level.
@@ -46,11 +46,18 @@ def unpack(func):
     and/or applied multiple times.
 
     """
-    getattr(func, PARAMS_SETS_ATTR)[0].unpack()
+    if isinstance(arg, int):
+        return lambda func: _unpack(arg, func)
+    else:
+        return _unpack(1, arg)
+
+
+def _unpack(count, func):
+    getattr(func, PARAMS_SETS_ATTR)[0].unpack(count)
     return func
 
 
-def unpackall(func):
+def unpackall(arg):
     """
     Method decorator to unpack parameters in all parameter sets by one level.
 
@@ -58,7 +65,14 @@ def unpackall(func):
     and/or applied multiple times.
 
     """
-    setattr(func, UNPACKALL_ATTR, getattr(func, UNPACKALL_ATTR, 0) + 1)
+    if isinstance(arg, int):
+        return lambda func: _unpackall(arg, func)
+    else:
+        return _unpackall(1, arg)
+
+
+def _unpackall(count, func):
+    setattr(func, UNPACKALL_ATTR, getattr(func, UNPACKALL_ATTR, 0) + count)
     return func
 
 
@@ -309,7 +323,7 @@ class InlineDataValues(object):
         self.unnamed_values = unnamed_values
         self.named_values = named_values
 
-    def unpack(self):
+    def unpack(self, count=1):
         """
         Increases by one the number of times values should be unpacked before
         passing them to the test function.
@@ -317,7 +331,7 @@ class InlineDataValues(object):
         This method is called directly by the ``unpack`` decorator.
 
         """
-        self.unpack_count = self.unpack_count + 1
+        self.unpack_count = self.unpack_count + count
 
     def use_class(self, cls):  # pylint: disable=unused-argument
         """
@@ -381,7 +395,7 @@ class FileDataValues(object):
         self.pathbase = os.path.dirname(cls_path)
         return self
 
-    def unpack(self):
+    def unpack(self, count=1):
         """
         Increase by one the number of times values should be unpacked before
         passing them to the test function.
@@ -389,7 +403,7 @@ class FileDataValues(object):
         This method is called directly by the @unpack decorator.
 
         """
-        self.unpack_count = self.unpack_count + 1
+        self.unpack_count = self.unpack_count + count
 
     def load_values(self):  # pylint: disable=unused-argument
         try:
